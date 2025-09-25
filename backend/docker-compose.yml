@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - ENV=dev
+      - CORS_ALLOW_ORIGINS=*
+      - POSTGRES_DSN=postgresql+psycopg2://user:password@postgres:5432/etl_db
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=
+      - CLICKHOUSE_DATABASE=default
+      - AIRFLOW_BASE_URL=http://airflow-webserver:8080
+      - LLM_BASE_URL=http://llm:8000
+    depends_on:
+      - postgres
+      - clickhouse
+    volumes:
+      - ./app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+
+  # PostgreSQL для метаданных
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=etl_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # ClickHouse для аналитики
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      - CLICKHOUSE_DB=default
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+
+  # Airflow (упрощенная версия)
+  airflow-webserver:
+    image: apache/airflow:2.8.1
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=True
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+    command: webserver
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.1
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    depends_on:
+      - postgres
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+    command: scheduler
+
+  # LLM сервис (заглушка)
+  llm:
+    image: python:3.11-slim
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./llm_stub:/app
+    working_dir: /app
+    command: python -m http.server 8000
+
+volumes:
+  postgres_data:
+  clickhouse_data:

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETL AI Assistant - MVP</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        .section { margin: 30px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .endpoint { background: #f8f9fa; padding: 10px; margin: 10px 0; border-left: 4px solid #007bff; }
+        .method { font-weight: bold; color: #28a745; }
+        .url { font-family: monospace; color: #6c757d; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .response { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
+        input, select, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 ETL AI Assistant - MVP Backend</h1>
+        
+        <div class="section">
+            <h2>🔍 Health Checks</h2>
+            <button onclick="checkHealth()">Общий статус</button>
+            <button onclick="checkAirflow()">Airflow</button>
+            <button onclick="checkDatabases()">Базы данных</button>
+            <div id="healthResponse" class="response" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Анализ источников данных</h2>
+            
+            <h3>Файлы (CSV/JSON/XML)</h3>
+            <div class="form-group">
+                <label>Путь к файлу:</label>
+                <input type="text" id="filePath" placeholder="/path/to/file.csv" value="/app/test_data/sample.csv">
+            </div>
+            <div class="form-group">
+                <label>Тип файла:</label>
+                <select id="fileType">
+                    <option value="csv">CSV</option>
+                    <option value="json">JSON</option>
+                    <option value="xml">XML</option>
+                </select>
+            </div>
+            <button onclick="analyzeFile()">Анализировать файл</button>
+
+            <h3>База данных</h3>
+            <div class="form-group">
+                <label>Тип БД:</label>
+                <select id="dbType">
+                    <option value="postgres">PostgreSQL</option>
+                    <option value="clickhouse">ClickHouse</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Таблица:</label>
+                <input type="text" id="dbTable" placeholder="table_name" value="users">
+            </div>
+            <button onclick="analyzeDB()">Анализировать БД</button>
+            
+            <div id="analysisResponse" class="response" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>💡 Рекомендации по хранению</h2>
+            <div class="form-group">
+                <label>Описание данных:</label>
+                <textarea id="dataDescription" placeholder="Временные аналитические данные с агрегатами">Временные аналитические данные с агрегатами</textarea>
+            </div>
+            <div class="form-group">
+                <label>Тип нагрузки:</label>
+                <select id="workloadType">
+                    <option value="analytical">Аналитическая</option>
+                    <option value="operational">Операционная</option>
+                    <option value="streaming">Стриминговая</option>
+                    <option value="mixed">Смешанная</option>
+                </select>
+            </div>
+            <button onclick="getRecommendations()">Получить рекомендации</button>
+            <div id="recommendResponse" class="response" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🗄️ Генерация DDL</h2>
+            <div class="form-group">
+                <label>Целевая СУБД:</label>
+                <select id="targetDB">
+                    <option value="postgres">PostgreSQL</option>
+                    <option value="clickhouse">ClickHouse</option>
+                    <option value="hive">Hive</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Имя таблицы:</label>
+                <input type="text" id="tableName" placeholder="my_table" value="analytics_data">
+            </div>
+            <button onclick="generateDDL()">Сгенерировать DDL</button>
+            <div id="ddlResponse" class="response" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔄 ETL Пайплайны</h2>
+            <div class="form-group">
+                <label>Источник (JSON):</label>
+                <textarea id="sourceConfig" placeholder='{"type": "csv", "path": "/data/input.csv"}'>{"type": "csv", "path": "/data/input.csv"}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Назначение (JSON):</label>
+                <textarea id="destConfig" placeholder='{"type": "clickhouse", "table": "analytics"}'>{"type": "clickhouse", "table": "analytics"}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Расписание (cron):</label>
+                <input type="text" id="schedule" placeholder="0 * * * *" value="0 * * * *">
+            </div>
+            <button onclick="createPipeline()">Создать пайплайн</button>
+            <button onclick="publishPipeline()">Опубликовать в Airflow</button>
+            <div id="pipelineResponse" class="response" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Доступные API эндпойнты</h2>
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="url">/api/v1/health/</span> - Общий статус
+            </div>
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="url">/api/v1/health/airflow</span> - Статус Airflow
+            </div>
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="url">/api/v1/health/databases</span> - Статус БД
+            </div>
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="url">/api/v1/analysis/file</span> - Анализ файла
+            </div>
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="url">/api/v1/analysis/db</span> - Анализ БД
+            </div>
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="url">/api/v1/recommend/storage</span> - Рекомендации
+            </div>
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="url">/api/v1/ddl/generate</span> - Генерация DDL
+            </div>
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="url">/api/v1/pipelines/draft</span> - Создание пайплайна
+            </div>
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="url">/api/v1/pipelines/publish</span> - Публикация в Airflow
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/v1';
+        
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                if (data) options.body = JSON.stringify(data);
+                
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                return { error: error.message };
+            }
+        }
+        
+        function showResponse(elementId, data) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+        
+        async function checkHealth() {
+            const result = await apiCall('/health/');
+            showResponse('healthResponse', result);
+        }
+        
+        async function checkAirflow() {
+            const result = await apiCall('/health/airflow');
+            showResponse('healthResponse', result);
+        }
+        
+        async function checkDatabases() {
+            const result = await apiCall('/health/databases');
+            showResponse('healthResponse', result);
+        }
+        
+        async function analyzeFile() {
+            const data = {
+                file_path: document.getElementById('filePath').value,
+                file_type: document.getElementById('fileType').value,
+                connection: {}
+            };
+            const result = await apiCall('/analysis/file', 'POST', data);
+            showResponse('analysisResponse', result);
+        }
+        
+        async function analyzeDB() {
+            const data = {
+                db_type: document.getElementById('dbType').value,
+                table: document.getElementById('dbTable').value,
+                connection: {}
+            };
+            const result = await apiCall('/analysis/db', 'POST', data);
+            showResponse('analysisResponse', result);
+        }
+        
+        async function getRecommendations() {
+            const data = {
+                profile_summary: document.getElementById('dataDescription').value,
+                workload: document.getElementById('workloadType').value
+            };
+            const result = await apiCall('/recommend/storage', 'POST', data);
+            showResponse('recommendResponse', result);
+        }
+        
+        async function generateDDL() {
+            const data = {
+                target_system: document.getElementById('targetDB').value,
+                table_name: document.getElementById('tableName').value,
+                sample: {
+                    columns: [
+                        { name: 'id', dtype: 'int', nullable: false },
+                        { name: 'ts', dtype: 'timestamp', nullable: false },
+                        { name: 'value', dtype: 'float', nullable: true }
+                    ]
+                }
+            };
+            const result = await apiCall('/ddl/generate', 'POST', data);
+            showResponse('ddlResponse', result);
+        }
+        
+        async function createPipeline() {
+            const data = {
+                source: JSON.parse(document.getElementById('sourceConfig').value),
+                destination: JSON.parse(document.getElementById('destConfig').value),
+                schedule_cron: document.getElementById('schedule').value
+            };
+            const result = await apiCall('/pipelines/draft', 'POST', data);
+            showResponse('pipelineResponse', result);
+        }
+        
+        async function publishPipeline() {
+            const data = {
+                source: JSON.parse(document.getElementById('sourceConfig').value),
+                destination: JSON.parse(document.getElementById('destConfig').value),
+                schedule_cron: document.getElementById('schedule').value
+            };
+            const result = await apiCall('/pipelines/publish', 'POST', data);
+            showResponse('pipelineResponse', result);
+        }
+    </script>
+</body>
+</html>
