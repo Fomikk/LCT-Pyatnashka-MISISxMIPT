@@ -174,7 +174,7 @@ MVP сервиса для автоматизации **ETL-задач** с ис�
 
 ## 📎 Полезные ссылки
 
-* **Project Board:** (добавить ссылку после создания)
+* **Project Board:** [(ссылка на Miro)](https://miro.com/welcomeonboard/ZEZzd3VDZVg1NVA5dDZsYkVMTXJMNDB0aGoxK2x6R1lkc3RWaGlSTXdyVC9iN0hmTVdmMFlKYlp5QjM3U09PeU8zUzRKeS9rS3BCV2dTR3dWQ0JPVFZKdVhiOStNK2UxNmFBRkZFcXExNFNXWDFwbVR1VWp0MGFZKzFjK1d5c1RNakdSWkpBejJWRjJhRnhhb1UwcS9BPT0hdjE=?share_link_id=307337209454)
 * **Docs:** `/docs`
 * **Архитектура:**
 * [Открыть схему в draw.io](./docs/LCT_schema.drawio)
