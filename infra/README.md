@@ -21,7 +21,7 @@ cd infra
 	2.	Откройте .env и замените значения при необходимости.
 
 Пример :
-
+```
 # PostgreSQL
 POSTGRES_USER=user
 POSTGRES_PASSWORD=pass
@@ -35,7 +35,7 @@ CLICKHOUSE_PASSWORD=
 AIRFLOW__CORE__FERNET_KEY=<сгенерированный_ключ>
 AIRFLOW__CORE__EXECUTOR=LocalExecutor
 AIRFLOW__CORE__LOAD_EXAMPLES=False
-
+```
 не пушьте .env с настоящими паролями в репозиторий.
 
 
