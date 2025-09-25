@@ -4,7 +4,6 @@
 
 ## Содержание
 - `docker-compose.yml` — поднятие всех сервисов (PostgreSQL, ClickHouse, Airflow и др.)
-- `Dockerfile` (по необходимости) — кастомные образы сервисов
 
 ## Требования
 - Установленный [Docker](https://docs.docker.com/get-docker/)
@@ -16,11 +15,35 @@
 cd infra
 ```
 
-2.	Поднимите все сервисы:
+2. Настройка окружения
+	1. Создайте .env:
+
+	2.	Откройте .env и замените значения при необходимости.
+
+Пример :
+
+# PostgreSQL
+POSTGRES_USER=user
+POSTGRES_PASSWORD=pass
+POSTGRES_DB=testdb
+
+# ClickHouse
+CLICKHOUSE_USER=default
+CLICKHOUSE_PASSWORD=
+
+# Airflow
+AIRFLOW__CORE__FERNET_KEY=<сгенерированный_ключ>
+AIRFLOW__CORE__EXECUTOR=LocalExecutor
+AIRFLOW__CORE__LOAD_EXAMPLES=False
+
+не пушьте .env с настоящими паролями в репозиторий.
+
+
+3.	Поднимите все сервисы:
 ```bash
 docker-compose up -d
 ```
-3.	Проверьте статус контейнеров:
+4.	Проверьте статус контейнеров:
 ```bash
 docker ps
 ```
@@ -40,7 +63,20 @@ docker ps
 
 **Airflow:**
 - веб-интерфейс: http://localhost:8080
-
+  
+5. Проверка работы Airflow
+	1.	Откройте браузер на http://localhost:8080
+	2.	Используйте логин/пароль, который вы создали при первом запуске.
+	3.	Если нужно создать новых пользователей Airflow:
+```bash
+docker-compose exec airflow airflow users create \
+    --username <username> \
+    --firstname <FirstName> \
+    --lastname <LastName> \
+    --role Admin \
+    --email <email@example.com> \
+    --password <password>
+```
 
 Остановка окружения
 ```bash
