@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../api/client';
 import OptionalReactFlow from '../components/GraphPreview/OptionalReactFlow';
+import { validateCron, cronExamples } from '../utils/cron';
 
 export default function PipelinePage() {
   const [source, setSource] = useState('{"type":"file","path":"/data/sample.csv"}');
@@ -25,9 +26,17 @@ export default function PipelinePage() {
       </div>
       <div className="mt-3 flex gap-2 items-center flex-wrap">
         <input value={cron} onChange={(e) => setCron(e.target.value)} className="px-3 py-2 min-w-52 bg-white border border-neutral-300 rounded-md shadow-sm" />
+        <select className="px-3 py-2 bg-white border border-neutral-300 rounded-md shadow-sm" onChange={(e) => setCron(e.target.value)} defaultValue="">
+          <option value="" disabled>Примеры расписания</option>
+          {cronExamples.map((c) => (
+            <option key={c.value} value={c.value}>{c.label}</option>
+          ))}
+        </select>
         <button
           onClick={async () => {
             setError(null);
+            const { valid, message } = validateCron(cron);
+            if (!valid) { setError(message || 'Неверный cron'); return; }
             setLoading(true);
             setDraft(null);
             try {
