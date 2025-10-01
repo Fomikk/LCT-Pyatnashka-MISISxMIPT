@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "required": ["target_store", "ddl_hints", "pipeline", "schedule", "risks"],
+  "properties": {
+    "target_store": { "type": "string", "enum": ["postgres", "clickhouse", "hdfs"] },
+
+    "ddl_hints": {
+      "type": "object",
+      "required": ["primary_key", "partition_by", "order_by", "table_name"],
+      "properties": {
+        "primary_key": { "type": ["string", "null"] },
+        "partition_by": { "type": ["string", "null"] },
+        "order_by": { "type": "array", "items": { "type": "string" } },
+        "table_name": { "type": "string" }
+      }
+    },
+
+    "pipeline": {
+      "type": "object",
+      "required": ["dag"],
+      "properties": {
+        "dag": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+
+    "schedule": {
+      "type": "object",
+      "required": ["cron", "reason"],
+      "properties": {
+        "cron": { "type": "string" },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+
+    "risks": { "type": "array", "items": { "type": "string" } }
+  }
+}
