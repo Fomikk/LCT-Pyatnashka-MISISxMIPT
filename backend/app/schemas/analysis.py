@@ -13,6 +13,17 @@ class ColumnProfile(BaseModel):
     dtype: str
     nullable: bool
     example: Optional[Any] = None
+    unique_count: Optional[int] = None
+    null_count: Optional[int] = None
+    null_percentage: Optional[float] = None
+    numeric_stats: Optional[dict[str, Any]] = None
+
+
+class DataQualityMetrics(BaseModel):
+    completeness_score: float = Field(ge=0, le=100, description="Оценка полноты данных (0-100)")
+    consistency_score: float = Field(ge=0, le=100, description="Оценка консистентности данных (0-100)")
+    uniqueness_score: float = Field(ge=0, le=100, description="Оценка уникальности данных (0-100)")
+    issues: list[str] = Field(default_factory=list, description="Список проблем с данными")
 
 
 class DataProfile(BaseModel):
@@ -21,6 +32,8 @@ class DataProfile(BaseModel):
     is_time_series: bool = False
     notes: Optional[str] = None
     sample_data: Optional[list[dict[str, Any]]] = None
+    data_quality: Optional[DataQualityMetrics] = None
+    file_metadata: Optional[dict[str, Any]] = None
 
 
 class FileAnalysisRequest(BaseModel):
