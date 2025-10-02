@@ -10,7 +10,6 @@ router = APIRouter()
 
 
 @router.get("/")
-@monitor_performance("health_check")
 async def health_check():
     """Общий health check"""
     health_status = monitoring_service.get_health_status()
@@ -24,7 +23,6 @@ async def health_check():
 
 
 @router.get("/detailed")
-@monitor_performance("detailed_health")
 async def detailed_health():
     """Детальная проверка здоровья всех сервисов"""
     health_status = monitoring_service.get_health_status()

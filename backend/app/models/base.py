@@ -5,10 +5,11 @@
 from datetime import datetime
 from typing import Any, Dict, Optional
 from sqlalchemy import Column, DateTime, Boolean, func
-from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.orm import DeclarativeBase, declared_attr
 
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 class TimestampMixin:

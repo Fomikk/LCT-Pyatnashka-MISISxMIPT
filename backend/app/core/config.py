@@ -1,5 +1,6 @@
 from functools import lru_cache
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from dotenv import load_dotenv
 import os
 
@@ -49,8 +50,7 @@ class Settings(BaseSettings):
     hdfs_port: int = 9870
     kafka_bootstrap: str = "kafka:9092"
 
-    class Config:
-        env_file = ".env"
+    model_config = ConfigDict(env_file=".env")
     
     # Методы для получения строк подключения
     @property
