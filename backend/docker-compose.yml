@@ -1,0 +1,152 @@
+services:
+  # Backend API
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - ENV=dev
+      - CORS_ALLOW_ORIGINS=*
+      # Метаданные БД
+      - METADATA_POSTGRES_HOST=metadata-postgres
+      - METADATA_POSTGRES_PORT=5432
+      - METADATA_POSTGRES_USER=metadata_user
+      - METADATA_POSTGRES_PASSWORD=metadata_password
+      - METADATA_POSTGRES_DATABASE=etl_metadata
+      # Рабочая БД
+      - STAGING_POSTGRES_HOST=staging-postgres
+      - STAGING_POSTGRES_PORT=5432
+      - STAGING_POSTGRES_USER=staging_user
+      - STAGING_POSTGRES_PASSWORD=staging_password
+      - STAGING_POSTGRES_DATABASE=etl_staging
+      # Целевая БД
+      - TARGET_CLICKHOUSE_HOST=target-clickhouse
+      - TARGET_CLICKHOUSE_PORT=8123
+      - TARGET_CLICKHOUSE_USER=default
+      - TARGET_CLICKHOUSE_PASSWORD=
+      - TARGET_CLICKHOUSE_DATABASE=etl_target
+      # Legacy поддержка
+      - POSTGRES_DSN=postgresql+psycopg2://metadata_user:metadata_password@metadata-postgres:5432/etl_metadata
+      - CLICKHOUSE_HOST=target-clickhouse
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=
+      - CLICKHOUSE_DATABASE=etl_target
+      - AIRFLOW_BASE_URL=http://airflow-webserver:8080
+      - LLM_BASE_URL=http://llm:8000
+    depends_on:
+      - metadata-postgres
+      - staging-postgres
+      - target-clickhouse
+    volumes:
+      - ./app:/app/app
+
+  # PostgreSQL для метаданных (пайплайны, источники данных)
+  metadata-postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=etl_metadata
+      - POSTGRES_USER=metadata_user
+      - POSTGRES_PASSWORD=metadata_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - metadata_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metadata_user -d etl_metadata"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL для рабочей БД (временное хранение)
+  staging-postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=etl_staging
+      - POSTGRES_USER=staging_user
+      - POSTGRES_PASSWORD=staging_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - staging_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U staging_user -d etl_staging"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ClickHouse для целевой БД (финальные результаты)
+  target-clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      - CLICKHOUSE_DB=etl_target
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=clickhouse_password
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    volumes:
+      - target_clickhouse_data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Airflow (упрощенная версия)
+  airflow-postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=airflow
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+
+  airflow-webserver:
+    image: apache/airflow:2.8.1
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=True
+    ports:
+      - "8081:8080"
+    depends_on:
+      - airflow-postgres
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+    command: webserver
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.1
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    depends_on:
+      - airflow-postgres
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+    command: scheduler
+
+  # LLM сервис (заглушка)
+  llm:
+    image: python:3.12-slim
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./llm_stub:/app
+    working_dir: /app
+    command: python -m http.server 8000
+
+volumes:
+  metadata_postgres_data:
+  staging_postgres_data:
+  target_clickhouse_data:
+  airflow_postgres_data:
