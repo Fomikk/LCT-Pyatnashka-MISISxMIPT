@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from app.integrations.airflow_client import airflow_client
 from app.connectors.database_connector import PostgresConnector, ClickHouseConnector
 from app.core.config import settings
+from app.services.monitoring_service import monitoring_service, monitor_performance
 import asyncio
 
 
@@ -11,14 +12,38 @@ router = APIRouter()
 @router.get("/")
 async def health_check():
     """Общий health check"""
+    health_status = monitoring_service.get_health_status()
     return {
-        "status": "ok",
+        "status": health_status["status"],
         "service": "etl-ai-assistant-backend",
-        "version": "0.1.0"
+        "version": "0.1.0",
+        "uptime_seconds": health_status["uptime_seconds"],
+        "timestamp": health_status["timestamp"]
     }
 
 
+@router.get("/detailed")
+async def detailed_health():
+    """Детальная проверка здоровья всех сервисов"""
+    health_status = monitoring_service.get_health_status()
+    metrics_summary = monitoring_service.get_metrics_summary()
+    
+    return {
+        "health": health_status,
+        "metrics": metrics_summary,
+        "recent_alerts": monitoring_service.get_recent_alerts(hours=1)
+    }
+
+
+@router.get("/metrics")
+@monitor_performance("metrics")
+async def get_metrics():
+    """Получение метрик системы"""
+    return monitoring_service.get_metrics_summary()
+
+
 @router.get("/airflow")
+@monitor_performance("airflow_health")
 async def airflow_health():
     """Проверка доступности Airflow"""
     try:

@@ -57,7 +57,7 @@ services:
 
   # LLM сервис (заглушка)
   llm:
-    image: python:3.11-slim
+    image: python:3.12-slim
     ports:
       - "8000:8000"
     volumes:
