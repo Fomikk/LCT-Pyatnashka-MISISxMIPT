@@ -227,3 +227,14 @@ clickhouse_data/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+.venv/
+.venv*/
+venv/
+node_modules/
+dist/
+build/
+.env
+.env.*
+__pycache__/
+*.pyc
+.DS_Store

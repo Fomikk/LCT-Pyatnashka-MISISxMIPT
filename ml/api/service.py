@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from ml.recommend.orchestrator import make_recommendation
 from ml.generators.ddl import generate_ddl
 
-router = APIRouter(prefix="/ml", tags=["ml"])
+router = APIRouter(prefix="", tags=["ml"])
 
 # --------- модели запросов/ответов ---------
 class PipelineIn(BaseModel):

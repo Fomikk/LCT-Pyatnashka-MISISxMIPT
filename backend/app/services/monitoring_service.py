@@ -1,6 +1,9 @@
 """
 Сервис мониторинга и метрик для ETL AI Assistant
 """
+import inspect
+from functools import wraps
+from time import perf_counter
 import time
 import asyncio
 from typing import Dict, Any, Optional, List
@@ -220,28 +223,49 @@ monitoring_service = MonitoringService()
 
 
 def monitor_performance(endpoint: str):
-    """Декоратор для мониторинга производительности"""
+    """Декоратор для мониторинга производительности.
+    Сохраняет сигнатуру исходной функции (wraps), чтобы FastAPI корректно парсил параметры.
+    Поддерживает async и sync обработчики.
+    """
     def decorator(func):
-        async def wrapper(*args, **kwargs):
-            start_time = time.time()
-            success = True
-            
-            try:
-                result = await func(*args, **kwargs)
-                return result
-            except Exception as e:
-                success = False
-                monitoring_service.record_error(
-                    error_type="function_error",
-                    error_message=str(e),
-                    context={"function": func.__name__, "endpoint": endpoint}
-                )
-                raise
-            finally:
-                response_time = time.time() - start_time
-                monitoring_service.record_request(endpoint, response_time, success)
-        
-        return wrapper
+        if inspect.iscoroutinefunction(func):
+            @wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                start = perf_counter()
+                success = True
+                try:
+                    return await func(*args, **kwargs)
+                except Exception as e:
+                    success = False
+                    monitoring_service.record_error(
+                        error_type="function_error",
+                        error_message=str(e),
+                        context={"function": func.__name__, "endpoint": endpoint}
+                    )
+                    raise
+                finally:
+                    duration = perf_counter() - start
+                    monitoring_service.record_request(endpoint, duration, success)
+            return async_wrapper
+        else:
+            @wraps(func)
+            def sync_wrapper(*args, **kwargs):
+                start = perf_counter()
+                success = True
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    success = False
+                    monitoring_service.record_error(
+                        error_type="function_error",
+                        error_message=str(e),
+                        context={"function": func.__name__, "endpoint": endpoint}
+                    )
+                    raise
+                finally:
+                    duration = perf_counter() - start
+                    monitoring_service.record_request(endpoint, duration, success)
+            return sync_wrapper
     return decorator
 
 

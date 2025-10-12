@@ -1,4 +1,4 @@
-const API = import.meta.env.VITE_API_BASE;
+const API = import.meta.env.VITE_API_BASE || '/api';
 
 export type Profile = {
   source: { type: 'file'|'postgres'|'clickhouse'|'hdfs'; format?: 'csv'|'json'|'xml'; name?: string };

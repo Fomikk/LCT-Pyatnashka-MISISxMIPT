@@ -1,7 +1,9 @@
 services:
   # Backend API
   backend:
-    build: .
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
     ports:
       - "8080:8080"
     environment:
